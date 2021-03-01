@@ -126,14 +126,23 @@ const GraphQLQueryNode = Noodl.defineNode({
 		},
 		extractResult:function(name,json) {
 			const result = Noodl.Array.get();
-			result.set(json[name]);
-			return result;
+			if (Array.isArray(json) ) {
+				result.set(json[name]);
+			} else {
+				var temp = [];
+				temp.push(json);
+				result.set(temp);	
+			}
+			//console.log("Result:", JSON.stringify(result) );
+			return result; 
 		}
 	},
 	setup: function (context, graphModel) {
 		if (!context.editorConnection || !context.editorConnection.isRunningLocally()) {
 			return;
 		}
+
+		console.log("Loaded GraphQL module");
 
 		graphModel.on("nodeAdded.GraphQL Query", function (node) {
 
