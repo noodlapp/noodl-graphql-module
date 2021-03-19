@@ -133,7 +133,6 @@ const GraphQLQueryNode = Noodl.defineNode({
 				temp.push(json);
 				result.set(temp);	
 			}
-			//console.log("Result:", JSON.stringify(result) );
 			return result; 
 		}
 	},
