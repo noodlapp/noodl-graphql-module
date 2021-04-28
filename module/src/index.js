@@ -37,11 +37,14 @@ const GraphQLQueryNode = Noodl.defineNode({
 		}
 	},
 	outputs: {
+		error: 'string',
+		failure: 'signal',
+		success: 'signal',
 	},
 	changed:{
 		RequestHeaders:function(value) {
 			try {
-				this.requestHeaderFunc = new Function('headers',value);
+				this.requestHeaderFunc = new Function('headers', value);
 			}
 			catch(e) {
 				this.requestHeaderFunc = undefined;
@@ -68,13 +71,19 @@ const GraphQLQueryNode = Noodl.defineNode({
 								}
 							})
 						}
+						this.sendSignalOnOutput("success");
 					}
 					else if(response.errors) {
 						var message = '';
-						response.errors.forEach((e) => message += (e.message + '\n'))
+						response.errors.forEach((e) => {
+							message += (e.message + '\n');
+							this.outputs.error = e.message;
+							this.flagOutputDirty("error");
+						});
+						this.sendSignalOnOutput("failure");
 						this.sendWarning('grapgql-query-warning',message);
 					}
-				}
+				} 
 			}
 
 			const json = {
