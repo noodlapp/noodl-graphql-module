@@ -37,11 +37,14 @@ const GraphQLQueryNode = Noodl.defineNode({
 		}
 	},
 	outputs: {
+		error: 'string',
+		failure: 'signal',
+		success: 'signal',
 	},
 	changed:{
 		RequestHeaders:function(value) {
 			try {
-				this.requestHeaderFunc = new Function('headers',value);
+				this.requestHeaderFunc = new Function('headers', value);
 			}
 			catch(e) {
 				this.requestHeaderFunc = undefined;
@@ -68,13 +71,19 @@ const GraphQLQueryNode = Noodl.defineNode({
 								}
 							})
 						}
+						this.sendSignalOnOutput("success");
 					}
 					else if(response.errors) {
 						var message = '';
-						response.errors.forEach((e) => message += (e.message + '\n'))
+						response.errors.forEach((e) => {
+							message += (e.message + '\n');
+							this.outputs.error = e.message;
+							this.flagOutputDirty("error");
+						});
+						this.sendSignalOnOutput("failure");
 						this.sendWarning('grapgql-query-warning',message);
 					}
-				}
+				} 
 			}
 
 			const json = {
@@ -126,14 +135,22 @@ const GraphQLQueryNode = Noodl.defineNode({
 		},
 		extractResult:function(name,json) {
 			const result = Noodl.Array.get();
-			result.set(json[name]);
-			return result;
+			if (Array.isArray(json) ) {
+				result.set(json[name]);
+			} else {
+				var temp = [];
+				temp.push(json);
+				result.set(temp);	
+			}
+			return result; 
 		}
 	},
 	setup: function (context, graphModel) {
 		if (!context.editorConnection || !context.editorConnection.isRunningLocally()) {
 			return;
 		}
+
+		console.log("Loaded GraphQL module");
 
 		graphModel.on("nodeAdded.GraphQL Query", function (node) {
 
